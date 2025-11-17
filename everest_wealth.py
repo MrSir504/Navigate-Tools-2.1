@@ -47,30 +47,39 @@ def calculate_investment_results(investment_amount, product):
         "net_monthly_income": net_monthly_income,
         "net_annual_return": net_annual_return,
         "net_total_return": net_total_return,
-        "broker_fee": broker_fee
+        "broker_fee": broker_fee,
+        "special_bonus": special_bonus,
+        "net_bonus": net_bonus,
     }
 
 def show():
-    st.write("Calculate returns for Everest Wealth investment products.")
     st.markdown(
-        "<p style='font-size: 14px; font-style: italic; color: #CCCCCC;'>Note: Returns are based on fixed rates for Onyx Income Plus (14.2% p.a.) and Strategic Income (12.8% p.a.) over a 5-year term. Dividend tax is deducted at 20%. Verify with Everest Wealth for your specific case.</p>",
-        unsafe_allow_html=True
+        """
+        <div class="nw-card">
+            <h3>Everest Wealth | Quick Quote</h3>
+            <p style="color: var(--muted);">
+                Present Onyx Income Plus or Strategic Income with clear gross/net income, broker fee and the Strategic bonus.
+                Rates set to current marketing: 14.2% (Onyx), 12.8% (Strategic) over 5 years with 20% dividend tax.
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True,
     )
 
-    # Client name input
-    name = st.text_input("Client's Name", key="everest_wealth_name")
-
-    # Product selection
-    product = st.selectbox("Select Everest Wealth Product", ["Onyx Income Plus", "Strategic Income"])
-
-    # Investment amount input with validation
-    investment_amount = st.number_input(
-        "Investment Amount (R)",
-        min_value=MINIMUM_INVESTMENT,
-        step=INVESTMENT_INCREMENT,
-        value=MINIMUM_INVESTMENT,
-        help="Minimum investment is R100,000, and the amount must be divisible by R5,000."
-    )
+    left, right = st.columns(2)
+    with left:
+        name = st.text_input("Client's Name", key="everest_wealth_name")
+        product = st.selectbox("Select Everest Wealth Product", ["Onyx Income Plus", "Strategic Income"])
+    with right:
+        investment_amount = st.number_input(
+            "Investment Amount (R)",
+            min_value=MINIMUM_INVESTMENT,
+            step=INVESTMENT_INCREMENT,
+            value=MINIMUM_INVESTMENT,
+            help="Minimum investment is R100,000, and the amount must be divisible by R5,000.",
+            format="%.0f",
+        )
+        st.caption("All returns shown net of 20% dividend tax. Strategic Income includes the 10% bonus at term.")
 
     # Validate that the investment amount is divisible by 5,000
     if investment_amount % INVESTMENT_INCREMENT != 0:
@@ -93,6 +102,11 @@ def show():
                 st.write(f"**Product**: {product}")
                 st.write(f"**Investment Amount**: R {investment_amount:,.2f}")
 
+                k1, k2, k3 = st.columns(3)
+                k1.metric("Gross monthly income", f"R {results['gross_monthly_income']:,.0f}")
+                k2.metric("Net monthly income (after tax)", f"R {results['net_monthly_income']:,.0f}")
+                k3.metric("Broker fee", f"R {results['broker_fee']:,.0f}")
+
                 # Summary table with improved styling
                 summary_data = {
                     "Metric": [
@@ -102,6 +116,8 @@ def show():
                         "Net Monthly Income (R)",
                         "Net Annual Return (R)",
                         "Net Total Return Over Term (R)",
+                        "Special Dividend Bonus (Gross, if any)",
+                        "Special Dividend Bonus (Net, if any)",
                         "Broker Fee Earned (R)"
                     ],
                     "Value": [
@@ -111,6 +127,8 @@ def show():
                         results["net_monthly_income"],
                         results["net_annual_return"],
                         results["net_total_return"],
+                        results["special_bonus"],
+                        results["net_bonus"],
                         results["broker_fee"]
                     ]
                 }
@@ -122,19 +140,19 @@ def show():
                     """
                     <style>
                     .dataframe {
-                        background-color: #555555;
-                        color: white;
-                        border: 1px solid #777777;
+                        background-color: #0f1b30;
+                        color: #e6edf7;
+                        border: 1px solid rgba(255, 255, 255, 0.12);
                     }
                     .dataframe th {
-                        background-color: #666666;
-                        color: white;
-                        border: 1px solid #777777;
+                        background-color: #11213b;
+                        color: #e6edf7;
+                        border: 1px solid rgba(255, 255, 255, 0.18);
                     }
                     .dataframe td {
-                        background-color: #555555;
-                        color: white;
-                        border: 1px solid #777777;
+                        background-color: #0f1b30;
+                        color: #e6edf7;
+                        border: 1px solid rgba(255, 255, 255, 0.08);
                     }
                     </style>
                     """,
@@ -143,25 +161,89 @@ def show():
                 st.write("**Investment Returns**")
                 st.dataframe(summary_df, use_container_width=True)
 
+                tax_drag = results["gross_total_return"] - results["net_total_return"]
+                client_color = "#3a60d1"
+                tax_color = "#f59e0b"
+                broker_color = "#10b981"
+
                 # Bar chart for gross vs net monthly income
                 fig = go.Figure(data=[
-                    go.Bar(name="Gross Monthly Income", x=["Gross"], y=[results["gross_monthly_income"]], marker_color="#1f77b4"),
-                    go.Bar(name="Net Monthly Income", x=["Net"], y=[results["net_monthly_income"]], marker_color="#ff7f0e")
+                    go.Bar(name="Gross Monthly Income", x=["Gross"], y=[results["gross_monthly_income"]], marker_color=client_color),
+                    go.Bar(name="Net Monthly Income", x=["Net"], y=[results["net_monthly_income"]], marker_color=broker_color)
                 ])
                 fig.update_layout(
                     title="Gross vs Net Monthly Income",
                     xaxis_title="Income Type",
                     yaxis_title="Amount (R)",
                     barmode="group",
-                    showlegend=True
+                    showlegend=True,
+                    paper_bgcolor="rgba(0,0,0,0)",
+                    plot_bgcolor="#f8fafc",
+                    font={'color': "#0f172a"},
+                    height=340,
+                    margin=dict(l=30, r=20, t=60, b=40),
                 )
-                st.plotly_chart(fig)
+                st.plotly_chart(fig, use_container_width=True)
+
+                # Cumulative returns over the five-year term
+                years = list(range(1, TERM_YEARS + 1))
+                gross_cumulative = []
+                net_cumulative = []
+                for year in years:
+                    gross_total = results["gross_annual_return"] * year
+                    net_total = results["net_annual_return"] * year
+                    if product == "Strategic Income" and year == TERM_YEARS:
+                        gross_total += results["special_bonus"]
+                        net_total += results["net_bonus"]
+                    gross_cumulative.append(gross_total)
+                    net_cumulative.append(net_total)
+
+                line_fig = go.Figure()
+                line_fig.add_trace(go.Scatter(
+                    x=years, y=gross_cumulative, mode="lines+markers", name="Gross cumulative",
+                    line=dict(color=client_color, width=3), marker=dict(size=9)
+                ))
+                line_fig.add_trace(go.Scatter(
+                    x=years, y=net_cumulative, mode="lines+markers", name="Net cumulative",
+                    line=dict(color=broker_color, width=3), marker=dict(size=9)
+                ))
+                line_fig.update_layout(
+                    title="Cumulative returns over term",
+                    xaxis_title="Year",
+                    yaxis_title="Total returns (R)",
+                    hovermode="x unified",
+                    paper_bgcolor="rgba(0,0,0,0)",
+                    plot_bgcolor="#f8fafc",
+                    font={'color': "#0f172a"},
+                    height=380,
+                    margin=dict(l=40, r=20, t=60, b=50),
+                )
+                st.plotly_chart(line_fig, use_container_width=True)
+
+                # Flow of returns at term-end
+                mix_fig = go.Figure(go.Pie(
+                    labels=["Net income to client", "Tax drag", "Broker fee"],
+                    values=[results["net_total_return"], tax_drag, results["broker_fee"]],
+                    hole=0.55,
+                    marker=dict(colors=[client_color, tax_color, broker_color]),
+                    textinfo="label+percent",
+                    hovertemplate="%{label}: R %{value:,.0f}<extra></extra>",
+                    sort=False,
+                ))
+                mix_fig.update_layout(
+                    title="Where the income flows",
+                    paper_bgcolor="rgba(0,0,0,0)",
+                    font={'color': "#0f172a"},
+                    height=360,
+                    legend_orientation="h",
+                    legend_y=-0.08,
+                    margin=dict(l=20, r=20, t=60, b=20),
+                )
+                st.plotly_chart(mix_fig, use_container_width=True)
 
                 # Additional note for Strategic Income
                 if product == "Strategic Income":
-                    bonus = investment_amount * STRATEGIC_INCOME_BONUS
-                    net_bonus = bonus * (1 - DIVIDEND_TAX_RATE)
-                    st.write(f"**Note**: Strategic Income includes a special dividend bonus of R {bonus:,.2f} (Net: R {net_bonus:,.2f} after 20% dividend tax) at the end of the term.")
+                    st.write(f"**Note**: Strategic Income includes a special dividend bonus of R {results['special_bonus']:,.2f} (Net: R {results['net_bonus']:,.2f} after 20% dividend tax) at the end of the term.")
 
                 # Downloadable summary
                 buffer = io.BytesIO()

@@ -75,15 +75,37 @@ def calculate_salary_tax(gross_salary, pension_contribution, age, medical_contri
     return taxable_income, paye_before_mtc, paye_before_mtc_monthly, mtc_annual, mtc_monthly, paye, paye_monthly, uif, uif_monthly, net_income, net_income_monthly, marginal_rate
 
 def show():
-    st.write("Enter client details to calculate their salary tax, UIF, medical tax credits, and net income.")
-    name = st.text_input("Client's Name", key="tax_calc_name")
-    gross_salary = st.number_input("Gross Annual Salary (R)", min_value=0.0, step=1000.0)
-    pension_contribution = st.number_input("Annual Pension/RA Contribution (R)", min_value=0.0, step=1000.0)
-    medical_contributions = st.number_input("Annual Medical Scheme Contributions (R)", min_value=0.0, step=1000.0)
-    num_dependants = st.number_input("Number of Dependants on Medical Scheme (including you)", min_value=0, max_value=10, step=1)
-    age = st.number_input("Client's Age", min_value=0, max_value=120, step=1)
+    snapshot = st.session_state.get("client_snapshot", {})
+    default_name = snapshot.get("client_name", "")
+    default_monthly_income = float(snapshot.get("household_income", 0))
+    default_annual_income = default_monthly_income * 12 if default_monthly_income else 0
+    st.markdown(
+        """
+        <div class="nw-card">
+            <h3>Payslip Story | TAX • UIF • Medical Credits</h3>
+            <p style="color: var(--muted);">
+                Perfect for payroll conversations. We adjust pension/RA deductions, apply medical credits and UIF caps,
+                and split results annual vs monthly for clarity.
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
-    if st.button("Calculate Tax"):
+    left, right = st.columns(2)
+    with left:
+        name = st.text_input("Client's Name", value=default_name, key="tax_calc_name")
+        gross_salary = st.number_input(
+            "Gross Annual Salary (R)", min_value=0.0, step=1000.0, value=default_annual_income, format="%.0f"
+        )
+        pension_contribution = st.number_input("Annual Pension/RA Contribution (R)", min_value=0.0, step=1000.0, format="%.0f")
+    with right:
+        medical_contributions = st.number_input("Annual Medical Scheme Contributions (R)", min_value=0.0, step=1000.0, format="%.0f")
+        num_dependants = st.number_input("Number of Dependants on Medical Scheme (including you)", min_value=0, max_value=10, step=1)
+        age = st.number_input("Client's Age", min_value=0, max_value=120, step=1)
+        st.caption("SA 2024/25 tax tables and UIF cap assumed. Update values if SARS releases new thresholds.")
+
+    if st.button("Calculate Tax", type="primary"):
         if not name.strip():
             st.error("Please enter a name.")
         elif gross_salary < 0 or pension_contribution < 0 or medical_contributions < 0 or num_dependants < 0 or age < 0:
@@ -91,12 +113,22 @@ def show():
         else:
             try:
                 taxable_income, paye_before_mtc, paye_before_mtc_monthly, mtc_annual, mtc_monthly, paye, paye_monthly, uif, uif_monthly, net_income, net_income_monthly, marginal_rate = calculate_salary_tax(gross_salary, pension_contribution, age, medical_contributions, num_dependants)
-                st.success("--- Salary Tax Summary ---")
-                st.write(f"**Client**: {name}")
-                st.write(f"**Gross Annual Salary**: R {gross_salary:,.2f}")
-                st.write(f"**Taxable Income**: R {taxable_income:,.2f}")
-                st.write(f"**PAYE (Before Medical Tax Credits, Annual)**: R {paye_before_mtc:,.2f}")
-                st.write(f"**PAYE (Before Medical Tax Credits, Monthly)**: R {paye_before_mtc_monthly:,.2f}")
+                k1, k2, k3 = st.columns(3)
+                k1.metric("Net monthly income", f"R {net_income_monthly:,.0f}")
+                k2.metric("PAYE monthly", f"R {paye_monthly:,.0f}")
+                k3.metric("Marginal rate", f"{marginal_rate * 100:.1f}%")
+
+                st.markdown(
+                    f"""
+                    <div class="nw-card">
+                        <p><strong>Client:</strong> {name} • Taxable income: R {taxable_income:,.0f}</p>
+                        <p style="color: var(--muted); margin-bottom: 0.3rem;">
+                            Pension/RA deduction applied: R {min(pension_contribution, gross_salary * 0.275):,.0f}
+                        </p>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
                 summary_data = {
                     "Client": [name],
                     "Gross Annual Salary (R)": [gross_salary],
@@ -111,7 +143,7 @@ def show():
                     st.write(f"**Tax Savings from Medical Credits**: {tax_savings_percentage:.1f}% of your PAYE")
                     st.progress(tax_savings_percentage / 100)
                     st.markdown(
-                        "<p style='font-size: 14px; font-style: italic; color: #CCCCCC;'>Dependent Credits: R364/month for you and your first dependant, R246/month for each additional dependant (e.g., spouse, children, or other family members on your medical scheme).</p>",
+                        "<p style='font-size: 14px; font-style: italic; color: var(--muted);'>Dependent Credits: R364/month for you and your first dependant, R246/month for each additional dependant (e.g., spouse, children, or other family members on your medical scheme).</p>",
                         unsafe_allow_html=True
                     )
                     summary_data["Medical Tax Credits (Annual) (R)"] = [mtc_annual]
@@ -138,7 +170,7 @@ def show():
                 })
                 st.bar_chart(chart_data.set_index("Category"))
                 st.markdown(
-                    "<p style='font-size: 14px; color: #888888;'>Note: Tax rates, UIF limits, and medical tax credits are based on 2024/2025 SARS tables. Verify with 2025/2026 rates when available.</p>",
+                    "<p style='font-size: 14px; color: var(--muted);'>Note: Tax rates, UIF limits, and medical tax credits are based on 2024/2025 SARS tables. Verify with 2025/2026 rates when available.</p>",
                     unsafe_allow_html=True
                 )
                 summary_df = pd.DataFrame(summary_data)

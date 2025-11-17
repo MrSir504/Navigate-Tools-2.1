@@ -103,29 +103,43 @@ def calculate_retirement_plan(monthly_income, inflation_rate, annual_increase, y
         return future_annual_income, future_monthly_income, capital_required, years_until_depletion, withdrawal_at_retirement
 
 def show():
-    st.write("Enter client details to calculate the capital needed for retirement.")
-    name = st.text_input("Client's Name", key="retirement_calc_name")
-    desired_monthly_income = st.number_input("Desired Monthly Income at Retirement (R)", min_value=0.0, step=1000.0)
-    desired_annual_increase = st.number_input("Desired Annual Income Increase (%)", min_value=0.0, max_value=20.0, value=3.0, step=0.5) / 100
-    current_age = st.number_input("Current Age", min_value=18, max_value=100, step=1)
-    retirement_age = st.selectbox("Retirement Age", [55, 60, 65])
-    inflation_rate = st.number_input("Inflation Rate (%)", min_value=0.0, max_value=20.0, value=6.0, step=0.5) / 100
-    assumed_return = st.number_input("Assumed Annual Return After Retirement (%)", min_value=0.0, max_value=20.0, value=7.0, step=0.5) / 100
+    snapshot = st.session_state.get("client_snapshot", {})
+    default_name = snapshot.get("client_name", "")
+    default_age = int(snapshot.get("age", 38))
+    default_monthly_income = float(snapshot.get("household_income", 18000))
+    default_desired_income = max(10000.0, default_monthly_income * 0.7) if default_monthly_income else 18000.0
+    st.markdown(
+        """
+        <div class="nw-card">
+            <h3>Retirement Blueprint</h3>
+            <p style="color: var(--muted);">
+                Blend income goals, inflation, drawdown limits and current provisions to show a clear retirement path.
+                Choose whether to preserve capital or allow for depletion and see the expected duration.
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
-    # Custom checkbox label with inline styling
-    col1, col2 = st.columns([0.05, 0.95])
-    with col1:
-        preserve_capital = st.checkbox("", key="preserve_capital")
-    with col2:
-        st.markdown(
-            '<p style="color: white; margin-top: 5px;">Preserve Capital at Retirement</p>',
-            unsafe_allow_html=True
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        name = st.text_input("Client's Name", value=default_name, key="retirement_calc_name")
+        current_age = st.number_input("Current Age", min_value=18, max_value=100, value=default_age, step=1)
+        retirement_age = st.selectbox("Retirement Age", [55, 60, 65], index=2)
+    with c2:
+        desired_monthly_income = st.number_input(
+            "Desired Monthly Income at Retirement (R)", min_value=0.0, step=1000.0, value=default_desired_income, format="%.0f"
         )
-    
-    preservation_years = 0
-    if preserve_capital:
-        preservation_years = st.selectbox("Preservation Period (Years)", [10, 15, 20, 25])
-    
+        desired_annual_increase = st.number_input("Desired Annual Income Increase (%)", min_value=0.0, max_value=20.0, value=3.0, step=0.5) / 100
+        inflation_rate = st.number_input("Inflation Rate (%)", min_value=0.0, max_value=20.0, value=6.0, step=0.5) / 100
+    with c3:
+        assumed_return = st.number_input("Assumed Annual Return After Retirement (%)", min_value=0.0, max_value=20.0, value=7.0, step=0.5) / 100
+        preserve_capital = st.checkbox("Preserve Capital at Retirement", key="preserve_capital")
+        preservation_years = 0
+        if preserve_capital:
+            preservation_years = st.selectbox("Preservation Period (Years)", [10, 15, 20, 25])
+        st.caption("Inflation-adjusted income model with max 17.5% drawdown if depletion is allowed.")
+
     provision_types = [
         "Retirement Annuity", "Pension Fund", "Provident Fund", "Preservation Fund",
         "Business", "Endowment", "Savings Fund", "Shares", "Linked Investment",
@@ -217,19 +231,19 @@ def show():
                     """
                     <style>
                     .dataframe {
-                        background-color: #555555;
-                        color: white;
-                        border: 1px solid #777777;
+                        background-color: #0f1b30;
+                        color: #e6edf7;
+                        border: 1px solid rgba(255, 255, 255, 0.1);
                     }
                     .dataframe th {
-                        background-color: #666666;
-                        color: white;
-                        border: 1px solid #777777;
+                        background-color: #11213b;
+                        color: #e6edf7;
+                        border: 1px solid rgba(255, 255, 255, 0.15);
                     }
                     .dataframe td {
-                        background-color: #555555;
-                        color: white;
-                        border: 1px solid #777777;
+                        background-color: #0f1b30;
+                        color: #e6edf7;
+                        border: 1px solid rgba(255, 255, 255, 0.08);
                     }
                     </style>
                     """,
@@ -237,9 +251,15 @@ def show():
                 )
                 st.dataframe(provisions_df, use_container_width=True)
                 st.write(f"**Total Future Value of Provisions**: R {total_provision_value:,.2f}")
+
+                m1, m2, m3 = st.columns(3)
+                m1.metric("Future monthly income (inflation adjusted)", f"R {future_monthly_income:,.0f}")
+                m2.metric("Provisions @ retirement", f"R {total_provision_value:,.0f}")
+
                 summary_data["Total Future Value of Provisions (R)"] = [total_provision_value]
                 if preserve_capital:
                     shortfall = capital_required - total_provision_value
+                    m3.metric("Capital target", f"R {capital_required:,.0f}")
                     st.write(f"**Capital Required at Retirement (Preserve Capital)**: R {capital_required:,.2f}")
                     summary_data["Capital Required at Retirement (R)"] = [capital_required]
                     summary_data["Preserve Capital"] = ["Yes"]
@@ -313,12 +333,12 @@ def show():
                         title="Initial Drawdown Rate (%)",
                         xaxis_title="Drawdown Rate (%)",
                         yaxis_title="",
-                        xaxis=dict(range=[0, 20], tickfont=dict(color="white")),
-                        yaxis=dict(tickfont=dict(color="white")),
+                        xaxis=dict(range=[0, 20], tickfont=dict(color="#e6edf7")),
+                        yaxis=dict(tickfont=dict(color="#e6edf7")),
                         showlegend=False,
-                        paper_bgcolor="#4A4A4A",
-                        plot_bgcolor="#4A4A4A",
-                        font={'color': "white"},
+                        paper_bgcolor="rgba(0,0,0,0)",
+                        plot_bgcolor="#0f1b30",
+                        font={'color': "#e6edf7"},
                         height=200
                     )
                     st.plotly_chart(fig_progress)
@@ -342,11 +362,11 @@ def show():
                         yaxis_title="Amount (R)",
                         barmode="group",
                         showlegend=True,
-                        paper_bgcolor="#4A4A4A",
-                        plot_bgcolor="#4A4A4A",
-                        font={'color': "white"},
-                        yaxis={'tickfont': {'color': "white"}},
-                        xaxis={'tickfont': {'color': "white"}}
+                        paper_bgcolor="rgba(0,0,0,0)",
+                        plot_bgcolor="#0f1b30",
+                        font={'color': "#e6edf7"},
+                        yaxis={'tickfont': {'color': "#e6edf7"}},
+                        xaxis={'tickfont': {'color': "#e6edf7"}}
                     )
                     st.plotly_chart(fig_bar)
 
@@ -355,6 +375,7 @@ def show():
                     years_until_depletion, first_withdrawal, capital_over_time, withdrawals_over_time, monthly_income_over_time, monthly_income_today_value = calculate_years_until_depletion(
                         total_provision_value, future_annual_income, inflation_rate, years_to_retirement, assumed_return
                     )
+                    m3.metric("Projected duration", f"{years_until_depletion} yrs")
                     st.write(f"**Capital at Retirement (Based on Provisions)**: R {total_provision_value:,.2f}")
                     st.write(f"**Years Until Capital Depletion**: {years_until_depletion}")
                     st.write(f"**Initial Withdrawal at Retirement (Annual)**: R {first_withdrawal:,.2f}")
@@ -395,11 +416,11 @@ def show():
                         yaxis_title="Amount (R)",
                         hovermode="x unified",
                         showlegend=True,
-                        paper_bgcolor="#4A4A4A",
-                        plot_bgcolor="#4A4A4A",
-                        font={'color': "white"},
-                        yaxis={'tickfont': {'color': "white"}},
-                        xaxis={'tickfont': {'color': "white"}}
+                        paper_bgcolor="rgba(0,0,0,0)",
+                        plot_bgcolor="#0f1b30",
+                        font={'color': "#e6edf7"},
+                        yaxis={'tickfont': {'color': "#e6edf7"}},
+                        xaxis={'tickfont': {'color': "#e6edf7"}}
                     )
                     st.plotly_chart(fig1)
 
@@ -425,11 +446,11 @@ def show():
                         yaxis_title="Monthly Income (R)",
                         hovermode="x unified",
                         showlegend=True,
-                        paper_bgcolor="#4A4A4A",
-                        plot_bgcolor="#4A4A4A",
-                        font={'color': "white"},
-                        yaxis={'tickfont': {'color': "white"}},
-                        xaxis={'tickfont': {'color': "white"}}
+                        paper_bgcolor="rgba(0,0,0,0)",
+                        plot_bgcolor="#0f1b30",
+                        font={'color': "#e6edf7"},
+                        yaxis={'tickfont': {'color': "#e6edf7"}},
+                        xaxis={'tickfont': {'color': "#e6edf7"}}
                     )
                     st.plotly_chart(fig2)
 

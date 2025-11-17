@@ -42,43 +42,57 @@ def calculate_executor_fees(gross_value, executor_fee_rate):
     return base_fee
 
 def show():
-    st.write("Enter details to assess your estate's liquidity and ensure your beneficiaries are protected.")
     st.markdown(
-        "<p style='font-size: 14px; font-style: italic; color: #CCCCCC;'>Note: Estate duty rates are based on 2025 South African laws: R3.5M abatement, 20% up to R30M, 25% above R30M. Verify with a tax professional for your specific case.</p>",
-        unsafe_allow_html=True
+        """
+        <div class="nw-card">
+            <h3>Estate Liquidity | South Africa</h3>
+            <p style="color: var(--muted);">
+                Stress-test the estate for executor fees, CGT at death and estate duty.
+                Surface the liquidity gap so you can position life cover or restructuring options.
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True,
     )
-    name = st.text_input("Client's Name", key="estate_name")
-    marital_status = st.selectbox("Marital Status", ["Single", "Married in Community of Property", "Married Out of Community (No Accrual)", "Married Out of Community (With Accrual)"])
-    has_surviving_spouse = st.checkbox("Is there a surviving spouse?", value=False)
+    info_col, status_col = st.columns(2)
+    with info_col:
+        name = st.text_input("Client's Name", key="estate_name")
+        marital_status = st.selectbox("Marital Status", ["Single", "Married in Community of Property", "Married Out of Community (No Accrual)", "Married Out of Community (With Accrual)"])
+    with status_col:
+        has_surviving_spouse = st.checkbox("Surviving spouse?", value=False)
+        st.caption("2025 SA estate duty rules: R3.5M abatement, 20% up to R30M, 25% thereafter.")
+
     st.write("**Liquid Assets**")
-    cash = st.number_input("Cash in Bank/Savings (R)", min_value=0.0, step=1000.0)
-    life_insurance_to_estate = st.number_input("Life Insurance Payable to Estate (R)", min_value=0.0, step=1000.0)
-    st.write("**Non-Liquid Assets**")
-    num_properties = st.number_input("Number of Properties", min_value=0, max_value=10, step=1, value=0)
-    properties = []
-    for i in range(num_properties):
-        st.write(f"**Property {i+1}**")
-        market_value = st.number_input(f"Market Value of Property {i+1} (R)", min_value=0.0, step=1000.0, key=f"prop_value_{i}")
-        properties.append(market_value)
-    num_investments = st.number_input("Number of Investments (e.g., Shares, Bonds)", min_value=0, max_value=10, step=1, value=0)
-    investments = []
-    for i in range(num_investments):
-        st.write(f"**Investment {i+1}**")
-        market_value = st.number_input(f"Market Value of Investment {i+1} (R)", min_value=0.0, step=1000.0, key=f"inv_value_{i}")
-        base_cost = st.number_input(f"Base Cost of Investment {i+1} (R)", min_value=0.0, step=1000.0, key=f"inv_base_{i}")
-        investments.append({"market_value": market_value, "base_cost": base_cost})
-    other_assets = st.number_input("Other Non-Liquid Assets (e.g., Vehicles, Jewelry) (R)", min_value=0.0, step=1000.0)
-    st.write("**Liabilities**")
-    debts = st.number_input("Outstanding Debts (e.g., Loans, Bonds) (R)", min_value=0.0, step=1000.0)
-    medical_bills = st.number_input("Medical Bills or Pre-Death Expenses (R)", min_value=0.0, step=1000.0)
-    st.write("**Will Details**")
-    cash_bequests = st.number_input("Cash Bequests to Beneficiaries (R)", min_value=0.0, step=1000.0)
-    spouse_bequest_value = st.number_input("Bequests to Surviving Spouse (R)", min_value=0.0, step=1000.0, disabled=not has_surviving_spouse)
-    pbo_bequest_value = st.number_input("Bequests to Public Benefit Organizations (R)", min_value=0.0, step=1000.0)
+    cash = st.number_input("Cash in Bank/Savings (R)", min_value=0.0, step=1000.0, format="%.0f")
+    life_insurance_to_estate = st.number_input("Life Insurance Payable to Estate (R)", min_value=0.0, step=1000.0, format="%.0f")
+
+    with st.expander("Non-Liquid Assets", expanded=True):
+        num_properties = st.number_input("Number of Properties", min_value=0, max_value=10, step=1, value=0)
+        properties = []
+        for i in range(num_properties):
+            st.write(f"**Property {i+1}**")
+            market_value = st.number_input(f"Market Value of Property {i+1} (R)", min_value=0.0, step=1000.0, format="%.0f", key=f"prop_value_{i}")
+            properties.append(market_value)
+        num_investments = st.number_input("Number of Investments (e.g., Shares, Bonds)", min_value=0, max_value=10, step=1, value=0)
+        investments = []
+        for i in range(num_investments):
+            st.write(f"**Investment {i+1}**")
+            market_value = st.number_input(f"Market Value of Investment {i+1} (R)", min_value=0.0, step=1000.0, format="%.0f", key=f"inv_value_{i}")
+            base_cost = st.number_input(f"Base Cost of Investment {i+1} (R)", min_value=0.0, step=1000.0, format="%.0f", key=f"inv_base_{i}")
+            investments.append({"market_value": market_value, "base_cost": base_cost})
+        other_assets = st.number_input("Other Non-Liquid Assets (e.g., Vehicles, Jewelry) (R)", min_value=0.0, step=1000.0, format="%.0f")
+
+    with st.expander("Liabilities & Costs", expanded=True):
+        debts = st.number_input("Outstanding Debts (e.g., Loans, Bonds) (R)", min_value=0.0, step=1000.0, format="%.0f")
+        medical_bills = st.number_input("Medical Bills or Pre-Death Expenses (R)", min_value=0.0, step=1000.0, format="%.0f")
+        cash_bequests = st.number_input("Cash Bequests to Beneficiaries (R)", min_value=0.0, step=1000.0, format="%.0f")
+        spouse_bequest_value = st.number_input("Bequests to Surviving Spouse (R)", min_value=0.0, step=1000.0, format="%.0f", disabled=not has_surviving_spouse)
+        pbo_bequest_value = st.number_input("Bequests to Public Benefit Organizations (R)", min_value=0.0, step=1000.0, format="%.0f")
+
     st.write("**Assumptions**")
     marginal_tax_rate = st.number_input("Marginal Tax Rate for CGT (e.g., 0.45 for 45%)", min_value=0.0, max_value=0.45, value=0.45, step=0.01)
     executor_fee_rate = st.number_input("Executor Fee Rate (%)", min_value=0.0, max_value=10.0, value=EXECUTOR_FEE_RATE_DEFAULT * 100, step=0.1) / 100
-    if st.button("Calculate Estate Liquidity"):
+    if st.button("Calculate Estate Liquidity", type="primary"):
         if not name.strip():
             st.error("Please enter a name.")
         elif cash < 0 or life_insurance_to_estate < 0 or any(p < 0 for p in properties) or any(i["market_value"] < 0 or i["base_cost"] < 0 for i in investments) or other_assets < 0 or debts < 0 or medical_bills < 0 or cash_bequests < 0 or spouse_bequest_value < 0 or pbo_bequest_value < 0 or marginal_tax_rate < 0 or marginal_tax_rate > 0.45 or executor_fee_rate < 0:
@@ -93,6 +107,12 @@ def show():
                 total_costs = cgt + estate_duty + executor_fees
                 liquid_assets = cash + life_insurance_to_estate
                 liquidity_shortfall = max(0, total_costs - liquid_assets)
+
+                k1, k2, k3 = st.columns(3)
+                k1.metric("Total estate costs", f"R {total_costs:,.0f}")
+                k2.metric("Liquid assets on death", f"R {liquid_assets:,.0f}")
+                k3.metric("Liquidity gap", f"R {liquidity_shortfall:,.0f}" if liquidity_shortfall > 0 else "None")
+
                 st.success("--- Estate Liquidity Summary ---")
                 st.write(f"**Client**: {name}")
                 st.write(f"**Gross Estate Value**: R {gross_estate:,.2f}")

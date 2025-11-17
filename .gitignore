@@ -1,0 +1,13 @@
+# Byte-compiled / generated
+__pycache__/
+*.pyc
+.pyc/
+
+# Virtual environments
+.venv/
+
+# OS cruft
+.DS_Store
+
+# Streamlit cache (if any)
+.streamlit/

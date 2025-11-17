@@ -10,8 +10,24 @@ def calculate_budget(monthly_income, expenses):
     return total_expenses, remaining_budget, savings_potential
 
 def show():
-    st.write("Enter your monthly income and expenses to create a budget and see your savings potential.")
-    monthly_income = st.number_input("Monthly Income (R)", min_value=0.0, step=1000.0, value=39500.0)
+    snapshot = st.session_state.get("client_snapshot", {})
+    default_income = float(snapshot.get("household_income", 39500))
+    st.markdown(
+        """
+        <div class="nw-card">
+            <h3>Cash Flow Map | Budget</h3>
+            <p style="color: var(--muted);">
+                Quickly split income, fixed and flexible spend to show affordability for new advice (RA, education, risk cover).
+                Adjust categories live while talking through the client's month.
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    monthly_income = st.number_input(
+        "Monthly Income (R)", min_value=0.0, step=500.0, value=default_income, format="%.0f"
+    )
     st.write("**Add Your Monthly Expenses**")
     with st.form(key="expense_form"):
         num_expenses = st.number_input("Number of Expense Categories", min_value=1, max_value=10, step=1, value=3)
@@ -21,9 +37,9 @@ def show():
             with col1:
                 category = st.text_input(f"Expense Category {i+1}", value=f"Category {i+1}", key=f"category_{i}")
             with col2:
-                amount = st.number_input(f"Amount (R)", min_value=0.0, step=100.0, key=f"amount_{i}")
+                amount = st.number_input(f"Amount (R)", min_value=0.0, step=100.0, format="%.0f", key=f"amount_{i}")
             expenses.append((category, amount))
-        submit_button = st.form_submit_button("Calculate Budget")
+        submit_button = st.form_submit_button("Calculate Budget", type="primary")
 
     if submit_button:
         if monthly_income < 0:
@@ -31,15 +47,29 @@ def show():
         else:
             try:
                 total_expenses, remaining_budget, savings_potential = calculate_budget(monthly_income, expenses)
-                st.success("--- Budget Summary ---")
-                st.write(f"**Monthly Income**: R {monthly_income:,.2f}")
-                st.write("**Expenses Breakdown**:")
+                savings_rate = (savings_potential / monthly_income * 100) if monthly_income else 0
+
+                k1, k2, k3 = st.columns(3)
+                k1.metric("Total expenses", f"R {total_expenses:,.0f}")
+                k2.metric("Remaining budget", f"R {remaining_budget:,.0f}")
+                k3.metric("Savings rate", f"{savings_rate:.1f}%")
+
+                st.write("**Expenses Breakdown**")
                 expenses_data = []
                 for category, amount in expenses:
-                    st.write(f"- {category}: R {amount:,.2f}")
                     expenses_data.append({"Category": category, "Amount (R)": amount})
-                st.write(f"**Total Monthly Expenses**: R {total_expenses:,.2f}")
-                st.write(f"**Remaining Budget**: R {remaining_budget:,.2f}")
+                st.dataframe(pd.DataFrame(expenses_data), use_container_width=True)
+
+                st.markdown(
+                    f"""
+                    <div class="nw-card">
+                        <p><strong>Monthly income:</strong> R {monthly_income:,.0f}</p>
+                        <p><strong>Total spend:</strong> R {total_expenses:,.0f}</p>
+                        <p><strong>Remaining budget:</strong> R {remaining_budget:,.0f}</p>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
                 summary_data = {
                     "Monthly Income (R)": [monthly_income],
                     "Total Monthly Expenses (R)": [total_expenses],

@@ -35,36 +35,64 @@ def calculate_ra_rebate(income, contribution):
     return deductible, tax_rate, rebate, excess
 
 def show():
-    st.write("Enter client details to calculate their tax rebate for retirement annuity contributions.")
     st.markdown(
-        "<p style='font-size: 14px; font-style: italic; color: #CCCCCC;'>RA Contribution Limits: You can deduct RA contributions up to 27.5% of your taxable income, capped at R350,000 per year. Excess contributions roll over to future years. Verify limits for the 2025/2026 tax year.</p>",
-        unsafe_allow_html=True
+        """
+        <div class="nw-card">
+            <h3>Retirement Annuity | Tax Rebate</h3>
+            <p style="color: var(--muted);">
+                Map the deductible limit (27.5% of income, capped at R350,000), flag excess contributions that roll forward,
+                and show the marginal rate used for the benefit.
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True,
     )
 
-    name = st.text_input("Client's Name")
-    income = st.number_input("Annual Pensionable Income (R)", min_value=0.0, step=1000.0)
-    contribution = st.number_input("Annual RA Contribution (R)", min_value=0.0, step=1000.0)
+    col_left, col_right = st.columns(2)
+    with col_left:
+        name = st.text_input("Client's Name")
+        income = st.number_input("Annual Pensionable Income (R)", min_value=0.0, step=1000.0, format="%.0f")
+    with col_right:
+        contribution = st.number_input("Annual RA Contribution (R)", min_value=0.0, step=1000.0, format="%.0f")
+        st.caption("Assumptions: 2024/2025 marginal rates. Confirm caps if new SARS tables apply.")
 
-    if st.button("Calculate Rebate"):
+    if st.button("Calculate Rebate", type="primary"):
         if not name.strip():
             st.error("Please enter a name.")
         elif income < 0 or contribution < 0:
             st.error("Income and contribution must be non-negative.")
         else:
             try:
-                deductible, tax_rate, rebate, excess = calculate_ra_rebate(income, contribution)
-                st.success("--- Tax Rebate Summary ---")
-                st.write(f"**Client**: {name}")
-                st.write(f"**Annual Pensionable Income**: R {income:,.2f}")
-                st.write(f"**RA Contribution**: R {contribution:,.2f}")
-                st.write(f"**Deductible Contribution**: R {deductible:,.2f}")
-                if excess > 0:
-                    st.write(f"**Excess Contribution (Carried Over)**: R {excess:,.2f}")
-                st.write(f"**Marginal Tax Rate**: {tax_rate * 100:.1f}%")
-                st.write(f"**Tax Rebate**: R {rebate:,.2f}")
+                deductible, tax_rate, rebate, excess = calculate_ra_rebate(
+                    income, contribution
+                )
+                max_deductible = min(income * 0.275, 350000)
+                remaining_space = max(0, max_deductible - contribution)
+
+                k1, k2, k3 = st.columns(3)
+                k1.metric("Deductible this year", f"R {deductible:,.0f}")
+                k2.metric("Marginal tax rate", f"{tax_rate * 100:.1f}%")
+                k3.metric("Tax rebate", f"R {rebate:,.0f}")
+
                 st.markdown(
-                    "<p style='font-size: 14px; color: #888888;'>Note: Tax rates are based on 2024/2025 SARS tables. Verify with 2025/2026 rates when available.</p>",
-                    unsafe_allow_html=True
+                    f"""
+                    <div class="nw-card" style="margin-top: 0.5rem;">
+                        <p><strong>Client:</strong> {name}</p>
+                        <p style="color: var(--muted); margin-bottom: 0.3rem;">
+                            Income: R {income:,.0f} • Contribution: R {contribution:,.0f}
+                        </p>
+                        <ul>
+                            <li>Deductible cap (27.5%, max R350,000): R {max_deductible:,.0f}</li>
+                            <li>Room before cap: R {remaining_space:,.0f}</li>
+                            <li>Excess carried to next year: R {excess:,.0f}</li>
+                        </ul>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+                st.markdown(
+                    "<p style='font-size: 14px; color: var(--muted);'>If you have payroll access, schedule this amount as a pre-tax deduction to capture the rebate monthly.</p>",
+                    unsafe_allow_html=True,
                 )
                 summary_data = {
                     "Client": [name],
