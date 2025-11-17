@@ -17,14 +17,14 @@ This log keeps lightweight context so any new collaborator (or future session) k
   - Life Cover Gap: Life/DI/CI need vs cover (income replacement, debts, education, final expenses).
 
 ## What we shipped this session
-- Modernized global styling to match user brand direction: added gradient canvas on the main view container, softened hero panel with “Broker dashboard” label, and expanded rounded expanders/cards.
-- Restyled inputs/buttons with subtler focus rings and radius; ensured sidebar retains dark gradient while main canvas uses a light gradient wash instead of flat white.
-- Tuned workspace tiles to a calmer blue gradient with lighter shadows to reduce visual harshness.
+- Boosted readability: brighter questionnaire radios, higher-contrast risk-profiler card, and darker gauge number/segments.
+- Sidebar usability: selected nav item now stays legible on the dark gradient, with clearer active highlight.
+- Everest Wealth visuals: added cumulative term line chart, income flow donut, bonus rows, and sharpened bar styling.
+- GitHub repo refreshed on `Navigate-Tools-2.1`; Streamlit deploy unblocked via entry-file URL.
 
 ## Next session focus
-- Finish card click wiring: ensure hidden buttons render before cards, IDs match, and clicks update `active_tool` without opening new tabs; remove any leftover legacy launcher output.
-- Confirm launcher look/feel signed off; otherwise refine spacing/typography and active-state styling.
-- Decide on deployment: push to GitHub and repoint Streamlit Cloud.
+- Confirm Streamlit app is live on `Navigate-Tools-2.1` URL; set custom subdomain if desired.
+- Add README refresh (screenshots, deploy note) and tag release.
 - Verify SARS tables (2024/25) and update if needed.
 - Consider a combined PDF pack (Brief + selected tool outputs).
 

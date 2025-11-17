@@ -11,3 +11,6 @@ __pycache__/
 
 # Streamlit cache (if any)
 .streamlit/
+
+# Local screenshots
+SCR-*.png
