@@ -42,9 +42,12 @@ def calculate_executor_fees(gross_value, executor_fee_rate):
     return base_fee
 
 def show():
+    snapshot = st.session_state.get("client_snapshot", {})
+    client_name = snapshot.get("client_name", "")
+
     st.markdown(
         """
-        <div class="nw-card">
+        <div class="nav-card">
             <h3>Estate Liquidity | South Africa</h3>
             <p style="color: var(--muted);">
                 Stress-test the estate for executor fees, CGT at death and estate duty.
@@ -54,9 +57,15 @@ def show():
         """,
         unsafe_allow_html=True,
     )
+
+    if not client_name:
+        st.warning("Please set up the Client Profile in the sidebar first.")
+        return
+
+    st.markdown(f"**Client:** {client_name}")
+
     info_col, status_col = st.columns(2)
     with info_col:
-        name = st.text_input("Client's Name", key="estate_name")
         marital_status = st.selectbox("Marital Status", ["Single", "Married in Community of Property", "Married Out of Community (No Accrual)", "Married Out of Community (With Accrual)"])
     with status_col:
         has_surviving_spouse = st.checkbox("Surviving spouse?", value=False)
@@ -93,9 +102,7 @@ def show():
     marginal_tax_rate = st.number_input("Marginal Tax Rate for CGT (e.g., 0.45 for 45%)", min_value=0.0, max_value=0.45, value=0.45, step=0.01)
     executor_fee_rate = st.number_input("Executor Fee Rate (%)", min_value=0.0, max_value=10.0, value=EXECUTOR_FEE_RATE_DEFAULT * 100, step=0.1) / 100
     if st.button("Calculate Estate Liquidity", type="primary"):
-        if not name.strip():
-            st.error("Please enter a name.")
-        elif cash < 0 or life_insurance_to_estate < 0 or any(p < 0 for p in properties) or any(i["market_value"] < 0 or i["base_cost"] < 0 for i in investments) or other_assets < 0 or debts < 0 or medical_bills < 0 or cash_bequests < 0 or spouse_bequest_value < 0 or pbo_bequest_value < 0 or marginal_tax_rate < 0 or marginal_tax_rate > 0.45 or executor_fee_rate < 0:
+        if cash < 0 or life_insurance_to_estate < 0 or any(p < 0 for p in properties) or any(i["market_value"] < 0 or i["base_cost"] < 0 for i in investments) or other_assets < 0 or debts < 0 or medical_bills < 0 or cash_bequests < 0 or spouse_bequest_value < 0 or pbo_bequest_value < 0 or marginal_tax_rate < 0 or marginal_tax_rate > 0.45 or executor_fee_rate < 0:
             st.error("All financial inputs must be non-negative, marginal tax rate must be between 0 and 45%, and executor fee rate must be non-negative.")
         else:
             try:
@@ -114,7 +121,7 @@ def show():
                 k3.metric("Liquidity gap", f"R {liquidity_shortfall:,.0f}" if liquidity_shortfall > 0 else "None")
 
                 st.success("--- Estate Liquidity Summary ---")
-                st.write(f"**Client**: {name}")
+                st.write(f"**Client**: {client_name}")
                 st.write(f"**Gross Estate Value**: R {gross_estate:,.2f}")
                 st.write(f"**Net Estate Value (after debts, medical bills, and cash bequests)**: R {net_estate:,.2f}")
                 st.write(f"**Capital Gains Tax**: R {cgt:,.2f}")
@@ -128,7 +135,7 @@ def show():
                 else:
                     st.write("**Liquidity Status**: Sufficient liquid assets to cover costs.")
                 summary_data = {
-                    "Client": [name],
+                    "Client": [client_name],
                     "Gross Estate Value (R)": [gross_estate],
                     "Net Estate Value (R)": [net_estate],
                     "Capital Gains Tax (R)": [cgt],

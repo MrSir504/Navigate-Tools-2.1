@@ -11,6 +11,7 @@ __pycache__/
 
 # Streamlit cache (if any)
 .streamlit/
+!.streamlit/config.toml
 
 # Local screenshots
 SCR-*.png

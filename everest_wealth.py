@@ -53,9 +53,12 @@ def calculate_investment_results(investment_amount, product):
     }
 
 def show():
+    snapshot = st.session_state.get("client_snapshot", {})
+    client_name = snapshot.get("client_name", "")
+
     st.markdown(
         """
-        <div class="nw-card">
+        <div class="nav-card">
             <h3>Everest Wealth | Quick Quote</h3>
             <p style="color: var(--muted);">
                 Present Onyx Income Plus or Strategic Income with clear gross/net income, broker fee and the Strategic bonus.
@@ -66,9 +69,14 @@ def show():
         unsafe_allow_html=True,
     )
 
+    if not client_name:
+        st.warning("Please set up the Client Profile in the sidebar first.")
+        return
+
+    st.markdown(f"**Client:** {client_name}")
+
     left, right = st.columns(2)
     with left:
-        name = st.text_input("Client's Name", key="everest_wealth_name")
         product = st.selectbox("Select Everest Wealth Product", ["Onyx Income Plus", "Strategic Income"])
     with right:
         investment_amount = st.number_input(
@@ -87,9 +95,7 @@ def show():
         return
 
     if st.button("Calculate Investment Returns"):
-        if not name.strip():
-            st.error("Please enter a name.")
-        elif investment_amount < MINIMUM_INVESTMENT:
+        if investment_amount < MINIMUM_INVESTMENT:
             st.error(f"Investment amount must be at least R{MINIMUM_INVESTMENT:,}.")
         else:
             try:
@@ -98,7 +104,7 @@ def show():
 
                 # Display summary
                 st.success("--- Everest Wealth Investment Summary ---")
-                st.write(f"**Client**: {name}")
+                st.write(f"**Client**: {client_name}")
                 st.write(f"**Product**: {product}")
                 st.write(f"**Investment Amount**: R {investment_amount:,.2f}")
 

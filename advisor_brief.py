@@ -115,11 +115,12 @@ def build_pdf(data: dict, snowball_summary: str = "") -> bytes:
 def show():
     """Advisor-ready one-pager: snapshot, quick ratios, notes, actions, and exports."""
     snap = st.session_state.get("client_snapshot", {})
+    client_name = snap.get("client_name", "")
     today = datetime.date.today().strftime("%Y-%m-%d")
 
     st.markdown(
         """
-        <div class="nw-card">
+        <div class="nav-card">
             <h3>Advisor Brief</h3>
             <p style="color: var(--muted);">
                 Use this as a pre-meeting cockpit: verify snapshot data, check affordability, capture notes/actions,
@@ -130,9 +131,14 @@ def show():
         unsafe_allow_html=True,
     )
 
+    if not client_name:
+        st.warning("Please set up the Client Profile in the sidebar first.")
+        return
+
+    st.markdown(f"**Client:** {client_name}")
+
     c1, c2, c3 = st.columns(3)
     with c1:
-        name = st.text_input("Client", value=snap.get("client_name", "Client"))
         age_default = snap.get("age", 38)
         try:
             age_default = int(age_default)
@@ -215,7 +221,7 @@ def show():
 
     st.markdown("### Export one-pager")
     export_data = {
-        "Client": name,
+        "Client": client_name,
         "Age": age,
         "Focus": meeting_focus,
         "Household income (R/month)": monthly_income,

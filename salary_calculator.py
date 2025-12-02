@@ -76,12 +76,13 @@ def calculate_salary_tax(gross_salary, pension_contribution, age, medical_contri
 
 def show():
     snapshot = st.session_state.get("client_snapshot", {})
-    default_name = snapshot.get("client_name", "")
+    client_name = snapshot.get("client_name", "")
     default_monthly_income = float(snapshot.get("household_income", 0))
     default_annual_income = default_monthly_income * 12 if default_monthly_income else 0
+
     st.markdown(
         """
-        <div class="nw-card">
+        <div class="nav-card">
             <h3>Payslip Story | TAX • UIF • Medical Credits</h3>
             <p style="color: var(--muted);">
                 Perfect for payroll conversations. We adjust pension/RA deductions, apply medical credits and UIF caps,
@@ -92,26 +93,29 @@ def show():
         unsafe_allow_html=True,
     )
 
+    if not client_name:
+        st.warning("Please set up the Client Profile in the sidebar first.")
+        return
+
     left, right = st.columns(2)
     with left:
-        name = st.text_input("Client's Name", value=default_name, key="tax_calc_name")
+        st.markdown(f"**Client:** {client_name}")
         gross_salary = st.number_input(
             "Gross Annual Salary (R)", min_value=0.0, step=1000.0, value=default_annual_income, format="%.0f"
         )
         pension_contribution = st.number_input("Annual Pension/RA Contribution (R)", min_value=0.0, step=1000.0, format="%.0f")
     with right:
         medical_contributions = st.number_input("Annual Medical Scheme Contributions (R)", min_value=0.0, step=1000.0, format="%.0f")
-        num_dependants = st.number_input("Number of Dependants on Medical Scheme (including you)", min_value=0, max_value=10, step=1)
-        age = st.number_input("Client's Age", min_value=0, max_value=120, step=1)
+        num_dependants = st.number_input("Number of Dependants on Medical Scheme (including you)", min_value=0, max_value=10, step=1, value=int(snapshot.get("dependants", 0)))
+        age = st.number_input("Client's Age", min_value=0, max_value=120, step=1, value=int(snapshot.get("age", 35)))
         st.caption("SA 2024/25 tax tables and UIF cap assumed. Update values if SARS releases new thresholds.")
 
     if st.button("Calculate Tax", type="primary"):
-        if not name.strip():
-            st.error("Please enter a name.")
-        elif gross_salary < 0 or pension_contribution < 0 or medical_contributions < 0 or num_dependants < 0 or age < 0:
+        if gross_salary < 0 or pension_contribution < 0 or medical_contributions < 0 or num_dependants < 0 or age < 0:
             st.error("All inputs must be non-negative.")
         else:
             try:
+                # ... (rest of the logic remains the same, just changing 'name' variable usage if needed)
                 taxable_income, paye_before_mtc, paye_before_mtc_monthly, mtc_annual, mtc_monthly, paye, paye_monthly, uif, uif_monthly, net_income, net_income_monthly, marginal_rate = calculate_salary_tax(gross_salary, pension_contribution, age, medical_contributions, num_dependants)
                 k1, k2, k3 = st.columns(3)
                 k1.metric("Net monthly income", f"R {net_income_monthly:,.0f}")
@@ -120,8 +124,8 @@ def show():
 
                 st.markdown(
                     f"""
-                    <div class="nw-card">
-                        <p><strong>Client:</strong> {name} • Taxable income: R {taxable_income:,.0f}</p>
+                    <div class="nav-card">
+                        <p><strong>Client:</strong> {client_name} • Taxable income: R {taxable_income:,.0f}</p>
                         <p style="color: var(--muted); margin-bottom: 0.3rem;">
                             Pension/RA deduction applied: R {min(pension_contribution, gross_salary * 0.275):,.0f}
                         </p>
@@ -130,7 +134,7 @@ def show():
                     unsafe_allow_html=True,
                 )
                 summary_data = {
-                    "Client": [name],
+                    "Client": [client_name],
                     "Gross Annual Salary (R)": [gross_salary],
                     "Taxable Income (R)": [taxable_income],
                     "PAYE Before Medical Tax Credits (Annual) (R)": [paye_before_mtc],

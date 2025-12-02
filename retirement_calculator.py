@@ -104,13 +104,15 @@ def calculate_retirement_plan(monthly_income, inflation_rate, annual_increase, y
 
 def show():
     snapshot = st.session_state.get("client_snapshot", {})
-    default_name = snapshot.get("client_name", "")
+    client_name = snapshot.get("client_name", "")
     default_age = int(snapshot.get("age", 38))
     default_monthly_income = float(snapshot.get("household_income", 18000))
+    default_ret_age = int(snapshot.get("retirement_age", 65))
     default_desired_income = max(10000.0, default_monthly_income * 0.7) if default_monthly_income else 18000.0
+
     st.markdown(
         """
-        <div class="nw-card">
+        <div class="nav-card">
             <h3>Retirement Blueprint</h3>
             <p style="color: var(--muted);">
                 Blend income goals, inflation, drawdown limits and current provisions to show a clear retirement path.
@@ -121,11 +123,16 @@ def show():
         unsafe_allow_html=True,
     )
 
+    if not client_name:
+        st.warning("Please set up the Client Profile in the sidebar first.")
+        return
+
+    st.markdown(f"**Client:** {client_name}")
+
     c1, c2, c3 = st.columns(3)
     with c1:
-        name = st.text_input("Client's Name", value=default_name, key="retirement_calc_name")
         current_age = st.number_input("Current Age", min_value=18, max_value=100, value=default_age, step=1)
-        retirement_age = st.selectbox("Retirement Age", [55, 60, 65], index=2)
+        retirement_age = st.number_input("Retirement Age", min_value=50, max_value=80, value=default_ret_age, step=1)
     with c2:
         desired_monthly_income = st.number_input(
             "Desired Monthly Income at Retirement (R)", min_value=0.0, step=1000.0, value=default_desired_income, format="%.0f"
@@ -171,9 +178,7 @@ def show():
         submit_button = st.form_submit_button("Calculate Retirement Plan")
 
     if submit_button:
-        if not name.strip():
-            st.error("Please enter a name.")
-        elif desired_monthly_income <= 0 or current_age < 18 or current_age >= retirement_age:
+        if desired_monthly_income <= 0 or current_age < 18 or current_age >= retirement_age:
             st.error("Please ensure desired income is positive and current age is valid (18 or older, less than retirement age).")
         else:
             try:
@@ -208,7 +213,7 @@ def show():
                 if total_weight > 0:
                     average_return /= total_weight
                 summary_data = {
-                    "Client": [name],
+                    "Client": [client_name],
                     "Current Age": [current_age],
                     "Retirement Age": [retirement_age],
                     "Years to Retirement": [years_to_retirement],
@@ -217,7 +222,7 @@ def show():
                     "Future Monthly Income Needed (R)": [future_monthly_income]
                 }
                 st.success("--- Retirement Plan Summary ---")
-                st.write(f"**Client**: {name}")
+                st.write(f"**Client**: {client_name}")
                 st.write(f"**Current Age**: {current_age}")
                 st.write(f"**Retirement Age**: {retirement_age}")
                 st.write(f"**Years to Retirement**: {years_to_retirement}")

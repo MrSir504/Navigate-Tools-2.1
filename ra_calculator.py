@@ -35,9 +35,13 @@ def calculate_ra_rebate(income, contribution):
     return deductible, tax_rate, rebate, excess
 
 def show():
+    snapshot = st.session_state.get("client_snapshot", {})
+    client_name = snapshot.get("client_name", "")
+    default_annual_income = float(snapshot.get("household_income", 0)) * 12
+
     st.markdown(
         """
-        <div class="nw-card">
+        <div class="nav-card">
             <h3>Retirement Annuity | Tax Rebate</h3>
             <p style="color: var(--muted);">
                 Map the deductible limit (27.5% of income, capped at R350,000), flag excess contributions that roll forward,
@@ -48,18 +52,21 @@ def show():
         unsafe_allow_html=True,
     )
 
+    if not client_name:
+        st.warning("Please set up the Client Profile in the sidebar first.")
+        return
+
+    st.markdown(f"**Client:** {client_name}")
+
     col_left, col_right = st.columns(2)
     with col_left:
-        name = st.text_input("Client's Name")
-        income = st.number_input("Annual Pensionable Income (R)", min_value=0.0, step=1000.0, format="%.0f")
+        income = st.number_input("Annual Pensionable Income (R)", min_value=0.0, step=1000.0, format="%.0f", value=default_annual_income)
     with col_right:
         contribution = st.number_input("Annual RA Contribution (R)", min_value=0.0, step=1000.0, format="%.0f")
         st.caption("Assumptions: 2024/2025 marginal rates. Confirm caps if new SARS tables apply.")
 
     if st.button("Calculate Rebate", type="primary"):
-        if not name.strip():
-            st.error("Please enter a name.")
-        elif income < 0 or contribution < 0:
+        if income < 0 or contribution < 0:
             st.error("Income and contribution must be non-negative.")
         else:
             try:
@@ -76,8 +83,8 @@ def show():
 
                 st.markdown(
                     f"""
-                    <div class="nw-card" style="margin-top: 0.5rem;">
-                        <p><strong>Client:</strong> {name}</p>
+                    <div class="nav-card" style="margin-top: 0.5rem;">
+                        <p><strong>Client:</strong> {client_name}</p>
                         <p style="color: var(--muted); margin-bottom: 0.3rem;">
                             Income: R {income:,.0f} • Contribution: R {contribution:,.0f}
                         </p>
@@ -95,7 +102,7 @@ def show():
                     unsafe_allow_html=True,
                 )
                 summary_data = {
-                    "Client": [name],
+                    "Client": [client_name],
                     "Annual Pensionable Income (R)": [income],
                     "RA Contribution (R)": [contribution],
                     "Deductible Contribution (R)": [deductible],

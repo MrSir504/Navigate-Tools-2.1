@@ -11,10 +11,12 @@ def calculate_budget(monthly_income, expenses):
 
 def show():
     snapshot = st.session_state.get("client_snapshot", {})
+    client_name = snapshot.get("client_name", "")
     default_income = float(snapshot.get("household_income", 39500))
+
     st.markdown(
         """
-        <div class="nw-card">
+        <div class="nav-card">
             <h3>Cash Flow Map | Budget</h3>
             <p style="color: var(--muted);">
                 Quickly split income, fixed and flexible spend to show affordability for new advice (RA, education, risk cover).
@@ -24,6 +26,12 @@ def show():
         """,
         unsafe_allow_html=True,
     )
+
+    if not client_name:
+        st.warning("Please set up the Client Profile in the sidebar first.")
+        return
+
+    st.markdown(f"**Client:** {client_name}")
 
     monthly_income = st.number_input(
         "Monthly Income (R)", min_value=0.0, step=500.0, value=default_income, format="%.0f"
@@ -62,7 +70,8 @@ def show():
 
                 st.markdown(
                     f"""
-                    <div class="nw-card">
+                    <div class="nav-card">
+                        <p><strong>Client:</strong> {client_name}</p>
                         <p><strong>Monthly income:</strong> R {monthly_income:,.0f}</p>
                         <p><strong>Total spend:</strong> R {total_expenses:,.0f}</p>
                         <p><strong>Remaining budget:</strong> R {remaining_budget:,.0f}</p>
@@ -71,6 +80,7 @@ def show():
                     unsafe_allow_html=True,
                 )
                 summary_data = {
+                    "Client": [client_name],
                     "Monthly Income (R)": [monthly_income],
                     "Total Monthly Expenses (R)": [total_expenses],
                     "Remaining Budget (R)": [remaining_budget]

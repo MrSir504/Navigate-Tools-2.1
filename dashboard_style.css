@@ -1,0 +1,188 @@
+/*
+    Apex Financial Console - Dark Mode / Broker Dashboard Theme
+    High contrast, professional, data-rich interface.
+*/
+
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+
+:root {
+    --bg-dark: #0a192f;
+    --bg-panel: #112240;
+    --bg-card: #1d3357; /* Slightly lighter than panel */
+    --text-primary: #e6f1ff;
+    --text-secondary: #8892b0;
+    --accent: #64ffda; /* Teal accent */
+    --accent-gold: #d4af37;
+    --accent-red: #ef4444;
+    --border-color: #233554;
+    --shadow-card: 0 10px 30px -10px rgba(2, 12, 27, 0.7);
+    --font-main: 'Roboto', sans-serif;
+    --radius-sm: 4px;
+    --radius-md: 8px;
+}
+
+body {
+    background-color: var(--bg-dark);
+    color: var(--text-primary);
+    font-family: var(--font-main);
+}
+
+.stApp {
+    background-color: var(--bg-dark);
+}
+
+/* Sidebar Styling */
+[data-testid="stSidebar"] {
+    background-color: var(--bg-panel);
+    border-right: 1px solid var(--border-color);
+}
+[data-testid="stSidebar"] * {
+    color: var(--text-secondary) !important;
+}
+[data-testid="stSidebar"] .stRadio div[role="radiogroup"] label {
+    background-color: transparent;
+    border: none;
+    color: var(--text-secondary);
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-sm);
+    transition: all 0.2s;
+}
+[data-testid="stSidebar"] .stRadio div[role="radiogroup"] label:hover {
+    color: var(--accent) !important;
+    background-color: rgba(100, 255, 218, 0.1);
+}
+[data-testid="stSidebar"] .stRadio div[role="radiogroup"] label:has(input:checked) {
+    color: var(--accent) !important;
+    background-color: rgba(100, 255, 218, 0.1);
+    border-left: 3px solid var(--accent);
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+    color: var(--text-primary) !important;
+    font-weight: 700;
+}
+p, span, label, .stMarkdown {
+    color: var(--text-secondary);
+}
+
+/* Custom Cards */
+.nav-card {
+    background-color: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: var(--shadow-card);
+}
+.nav-card h3 {
+    color: var(--accent) !important;
+    margin-bottom: 0.5rem;
+    font-size: 1.2rem;
+}
+.nav-card-header {
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+}
+
+/* Inputs */
+.stTextInput input, .stNumberInput input, .stSelectbox div[data-baseweb="select"] > div, .stTextArea textarea {
+    background-color: var(--bg-card);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+}
+.stTextInput input:focus, .stNumberInput input:focus, .stTextArea textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent);
+}
+
+/* Buttons */
+.stButton button {
+    background-color: transparent;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    border-radius: var(--radius-sm);
+    transition: all 0.2s;
+    font-weight: 500;
+}
+.stButton button:hover {
+    background-color: rgba(100, 255, 218, 0.1);
+    color: var(--accent);
+    border-color: var(--accent);
+}
+.stButton button:active {
+    transform: translateY(1px);
+}
+button[kind="primary"] {
+    background-color: var(--accent);
+    color: var(--bg-dark);
+    border: none;
+}
+button[kind="primary"]:hover {
+    background-color: #4cdabb;
+    color: var(--bg-dark);
+}
+
+/* Metrics */
+[data-testid="stMetricValue"] {
+    color: var(--text-primary) !important;
+    font-size: 1.8rem;
+}
+[data-testid="stMetricLabel"] {
+    color: var(--text-secondary) !important;
+}
+[data-testid="stMetricDelta"] {
+    color: var(--accent-gold) !important;
+}
+
+/* Dataframe/Tables */
+[data-testid="stDataFrame"] {
+    background-color: var(--bg-panel);
+    border: 1px solid var(--border-color);
+}
+.dataframe {
+    color: var(--text-secondary);
+}
+
+/* Slider */
+.stSlider div[data-baseweb="slider"] div {
+    background-color: var(--accent);
+}
+
+/* Client Context Banner */
+.client-context-banner {
+    background: linear-gradient(90deg, var(--bg-panel) 0%, var(--bg-card) 100%);
+    border-bottom: 2px solid var(--accent);
+    padding: 1rem 1.5rem;
+    margin-bottom: 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: var(--radius-md);
+}
+.client-name {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+.client-id {
+    font-size: 0.9rem;
+    color: var(--accent);
+    font-family: monospace;
+}
+
+/* Tooltips & Helpers */
+.stTooltipIcon {
+    color: var(--text-secondary);
+}
+
+/* Progress Bar */
+.stProgress > div > div > div > div {
+    background-color: var(--accent);
+}
+
+/* Header Hiding */
+header {visibility: hidden;}
+footer {visibility: hidden;}

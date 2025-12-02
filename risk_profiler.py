@@ -28,9 +28,12 @@ def get_profile(score: int):
 
 def show():
     snapshot = st.session_state.get("client_snapshot", {})
+    client_name = snapshot.get("client_name", "")
+    age = int(snapshot.get("age", 40))
+
     st.markdown(
         """
-        <div class="nw-card">
+        <div class="nav-card">
             <h3>Risk Profiler</h3>
             <p style="color: var(--muted);">
                 Quick appetite scan to anchor your portfolio conversation. Scores map to suggested equity exposure and talking points.
@@ -40,21 +43,17 @@ def show():
         unsafe_allow_html=True,
     )
 
-    c1, c2 = st.columns([1.2, 1])
-    with c1:
-        name = st.text_input("Client", value=snapshot.get("client_name", "Client"))
-        default_age = snapshot.get("age", 40)
-        try:
-            default_age = int(default_age)
-        except (TypeError, ValueError):
-            default_age = 40
-        age = st.number_input("Age", min_value=0, max_value=120, value=default_age, key="risk_profiler_age")
-    with c2:
-        context = st.text_area("Context / scenario", value="Retirement investing; RA/living annuity blend.", height=70)
+    if not client_name:
+        st.warning("Please set up the Client Profile in the sidebar first.")
+        return
+
+    st.markdown(f"**Client:** {client_name} (Age: {age})")
+
+    context = st.text_area("Context / scenario", value="Retirement investing; RA/living annuity blend.", height=70)
 
     st.markdown("### Questionnaire")
     st.caption("Answer together with the client; bolder styling keeps it readable in bright rooms.")
-    st.markdown('<div class="nw-card risk-qs">', unsafe_allow_html=True)
+    st.markdown('<div class="nav-card">', unsafe_allow_html=True)
     score = 0
     for idx, (prompt, options, weights) in enumerate(QUESTIONS):
         choice = st.radio(prompt, options, key=f"risk_q{idx}", horizontal=True)
@@ -76,7 +75,7 @@ def show():
             go.Indicator(
                 mode="gauge+number",
                 value=profile["equity"],
-                number={"suffix": "%", "font": {"size": 44, "color": "#0f172a"}},
+                number={"suffix": "%", "font": {"size": 44, "color": "#e6f1ff"}},
                 gauge={
                     "axis": {"range": [0, 100]},
                     "bar": {"color": "#2dd4bf", "thickness": 0.26},
@@ -87,7 +86,7 @@ def show():
                         {"range": [60, 80], "color": "rgba(59,130,246,0.24)"},
                         {"range": [80, 100], "color": "rgba(59,130,246,0.3)"},
                     ],
-                    "bgcolor": "rgba(255,255,255,0.85)",
+                    "bgcolor": "rgba(29, 51, 87, 0.85)",
                 },
                 title={"text": "Equity tilt guidance"},
             )
@@ -96,7 +95,7 @@ def show():
             height=280,
             margin=dict(l=30, r=30, t=40, b=20),
             paper_bgcolor="rgba(0,0,0,0)",
-            font_color="#0f172a",
+            font_color="#e6f1ff",
         )
         st.plotly_chart(fig, use_container_width=True)
 
