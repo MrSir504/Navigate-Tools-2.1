@@ -1,14 +1,49 @@
+import importlib.util
+import subprocess
+import sys
+
 import streamlit as st
 
+
+REQUIRED_DEPENDENCIES = {
+    "pandas": "pandas>=2.2.0",
+    "plotly": "plotly>=5.24.0",
+    "xlsxwriter": "xlsxwriter>=3.2.0",
+    "fpdf": "fpdf2>=2.7.0",
+}
+
+
+def ensure_runtime_dependencies():
+    """Install missing pip packages at runtime to avoid Streamlit Cloud import errors."""
+    missing = [spec for mod, spec in REQUIRED_DEPENDENCIES.items() if importlib.util.find_spec(mod) is None]
+    if not missing:
+        return
+    try:
+        subprocess.run([sys.executable, "-m", "pip", "install", *missing], check=True)
+    except Exception as exc:  # pragma: no cover - defensive for cloud/runtime issues
+        message = (
+            "Some dependencies are missing and could not be installed automatically. "
+            "Please ensure `requirements.txt` is applied on deploy and rerun."
+        )
+        try:
+            st.error(message)
+            st.exception(exc)
+            st.stop()
+        except Exception:  # If Streamlit context is not ready (e.g., import-only), re-raise.
+            raise RuntimeError(message) from exc
+
+
+ensure_runtime_dependencies()
+
+import advisor_brief
 import budget_tool
 import estate_liquidity
 import everest_wealth
+import life_cover_gap
 import ra_calculator
 import retirement_calculator
-import salary_calculator
-import advisor_brief
 import risk_profiler
-import life_cover_gap
+import salary_calculator
 
 
 st.set_page_config(
